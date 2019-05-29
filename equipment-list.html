@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>设备绑定</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="x5-fullscreen" content="true">
+    <!--App自定义的css-->
+    <link rel="stylesheet" type="text/css" href="./css/style.css" />
+    <link rel="stylesheet" type="text/css" href="./css/list.css" />
+    <link rel="stylesheet" type="text/css" href="./plugins/dropload.css">
+</head>
+
+<body>
+    <header>
+        <div class="searchBox">
+            <i class="icon icon-search"></i>
+            <input id="search" type="text" maxlength="20" placeholder="请输入单位名称">
+            <div id="option" hidden class="option"></div>
+        </div>
+    </header>
+    <div id="root">
+        <div id="empty" class="empty">暂无相关数据</div>
+        <ul id="list" class="emList">
+            <!-- <li>
+                <div class="card">
+                    <div class="content">
+                        <div id="bind" class="bind">绑定</div>
+                        <div>设备编号：<span>357213276545</span></div>
+                        <div>接入状态：<span><i class="icon icon-dot" status='success'></i>设备正常</span></div>
+                        <div>在线状态：<span><i class="icon icon-outline"></i>离线</span></div>
+                        <div>浓度：<span>0.0</span></div>
+                        <div>更新时间：<span>2019-4-1</span></div>
+                    </div>
+                </div>
+            </li> -->
+        </ul>
+    </div>
+</body>
+<script src="./plugins/jquery.min.js"></script>
+<script src="./plugins/dropload.js"></script>
+<script src="./js/ajax.js"></script>
+<script src="./js/util.js"></script>
+<script>
+    
+    var _empty = $('#empty');
+    var _list = $('#list');
+    var _search = $('#search');
+    var _searchOption = $('#option');
+
+    var dropload;
+    var uname;
+
+    $(function(){
+        
+        _search.on('input', function(){
+            if(this.value.length){
+                _searchOption.removeAttr('hidden')
+            } else {
+                uname = null;
+                _searchOption.attr('hidden','hidden');
+                ajax.reset();
+                _list.html('');
+                getCompany();
+            }
+            _searchOption.html(this.value);
+        })
+
+        // 点击搜索，查询设备
+        _searchOption.on('click', function(e){
+            var thisItem = $(this);
+            uname = thisItem.html();
+            
+            ajax.search({ uname: uname });
+            _list.html('');
+            getCompany();
+
+            thisItem.attr('hidden','hidden');
+        })
+
+        // 点击绑定，绑定设备
+        _list.on('click', '.bind', function(){
+            var thisItem = $(this);
+            var name = thisItem.attr('data-name');
+            var checkName = prompt('请输入负责人全名，以验证身份');
+
+            if (checkName === name) {
+                var uid = thisItem.attr('data-uid');
+                var openid = localStorage.getItem('openid');
+                bind(openid, uid);
+            } else if(checkName) {
+                alert('验证失败，不能绑定！');
+            }
+        })
+
+        dropload = $('#root').dropload({
+            scrollArea : window,
+            autoLoad: false,
+            domDown: {
+                domClass   : 'dropload-down',
+                domRefresh : '',
+                domLoad    : '<div class="dropload-load"><span class="loading"></span>加载中</div>',
+                domNoData  : ''
+            },
+            loadUpFn: function(me){
+                _empty.removeAttr('hidden');
+                _list.html('').attr('hidden', 'hidden');
+
+                dropload.isLockDown = false;
+
+                _search.val('');
+                uname = null;
+                ajax.reset();
+                getCompany();
+            },
+            loadDownFn: function(me){
+                getCompany();
+            }
+        });
+
+        getCompany();
+
+    })
+
+    function bind(openid, uid){
+        ajax.request('/alarmWechatBind/alarmWechatBindInfo/bindCompanyByOpenid', {
+            data: {
+                openid: openid,
+                bindid: uid
+            },
+            type: 'post',
+            success: function(res){
+                var errorMessage = {
+                    "66011": "微信绑定异常",
+                    "66012": "单位已绑定",
+                    "66013": "单位绑定成功",
+                    "66014": "单位绑定失败",
+                    "61010": "绑定失败，请先关注公众号！",
+                };
+                alert(errorMessage[res.code] || '绑定失败！请重试');
+            }
+        })
+    }
+
+    function getCompany (){
+
+        function getName (n){
+            var str = '';
+            while (str.length < n.length - 1) str += '*';
+            str = n.substr(0, 1) + str;
+            return str;
+        }
+
+        ajax.next('/company/companyBaseInfo/selectCompanyInfolist',{
+            complete: function(){
+                dropload.resetload();
+            },
+            success: function(res){
+                if(res.code === '0'){
+                    var list = res.data.list;
+                    if(list.length) {
+                        _empty.attr('hidden', 'hidden');
+                        _list.removeAttr('hidden');
+
+                        var dataDom = [];
+                        list.forEach(function (item) {
+                            dataDom.push(`
+                                <li>
+                                    <div class="card">
+                                        <div class="content">
+                                            <div>单位名称：${item.uname}</div>
+                                            <div>单位负责人：${getName(item.lname)}</div>
+                                            <div>负责人电话：${item.ltel}</div>
+                                            <div class="bind" data-name="${item.lname}" data-uid="${item.unid}">绑定</div>
+                                        </div>
+                                    </div>
+                                </li>
+                            `)
+                        })
+                        _list.append(dataDom.join(''));
+
+                        // 所有的数据加载完毕，不再进行下一次列表请求，除非刷新
+                        dropload.isLockDown = _list.children('li').length >= Number(res.data.total) || list.length < 10;
+                    }
+                } else {
+                    if (confirm('请求失败，点击确认刷新重试~')) {
+                        window.location.reload();
+                    }
+                }
+            }
+        })
+    }
+</script>
+</html>

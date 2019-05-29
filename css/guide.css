@@ -1,0 +1,91 @@
+
+#root{
+    position: relative;
+    max-width: none;
+    min-height: 100vh;
+    background: url(../img/background-guide.jpg);
+    background-size: 100% 100%;
+}
+
+.slide{
+    position: relative;
+}
+
+.cancel-guide{
+    position: absolute;
+    left: 80vw;
+    top: 16px;
+    padding: 6px 12px;
+    background: #585b64;
+    border-radius: 20px;
+}
+
+.content{
+    width: 70%;
+    height: 70vh;
+    margin: 15vh auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    text-align: center;
+}
+
+h2{
+    font-size: 1rem;
+    font-weight: normal;
+}
+
+.title{
+    font-size: 0.9rem;
+    margin: 25px auto 12px;
+    font-family: '楷体';
+}
+
+.rule{
+    font-size: 0.7rem;
+    font-family: '楷体';
+}
+
+.rule img{
+    width: 90%;
+    margin: 36px auto;
+}
+
+.service{
+    padding: 6px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    background: #585b64;
+    border-radius: 2px;
+    font-size: 0.5rem;
+}
+.service div{
+    margin: 4px;
+    display: flex;
+}
+.service span{
+    flex: 1;
+    text-align: left;
+}
+
+.dot-list{
+    position: absolute;
+    bottom: 6vh;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.dot-list li{
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #747884;
+    margin: 0 6px;
+}
+
+.dot-list li.cur{
+    background: #fff;
+}

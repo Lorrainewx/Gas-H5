@@ -1,0 +1,26 @@
+
+body{
+    background: #f1f1f1;
+    color: #333333;
+}
+
+.card{
+    width: 90%;
+    border-radius: 6px;
+    margin: 16px auto;
+}
+
+.card .content > div.align-start{
+    align-items: flex-start;
+    word-break: keep-all;
+}
+
+.card .content input{
+    flex: 1;
+    height: 100%;
+}
+
+.card .content textarea{
+    flex: 1;
+    line-height: 20px;
+}

@@ -1,0 +1,60 @@
+
+/* body{
+    background: #f1f1f1;
+} */
+
+header{
+    padding: 10px 0;
+    /* background: #1f2837; */
+}
+
+.bind {
+    position: absolute;
+    bottom: 12px;
+    right: 5%;
+    color: #5bca8d;
+}
+
+.searchBox {
+    position: relative;
+    width: calc(92% - 32px);
+    height: 36px;
+    padding: 0 16px;
+    margin: 0 auto;
+    background: #1f2837;
+    border-radius: 18px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.searchBox input {
+    flex: 1;
+    height: 80%;
+    margin-left: 8px;
+    color: #fff;
+}
+
+.searchBox .option{
+    flex: 1;
+    height: 36px;
+    line-height: 36px;
+    position: absolute;
+    top: 36px;
+    left: 30px;
+    right: 30px;
+    background: #364968;
+    text-indent: 1.5em;
+    box-shadow: 0 1px 1px 1px #31415d;
+    z-index: 999;
+}
+
+ul.emList {
+    width: 100%;
+    height: auto;
+}
+
+ul.emList .card{
+    background: #1f2837;
+    color: #fff;
+}

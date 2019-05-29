@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>设备详情</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black">
+		<!--App自定义的css-->
+		<link rel="stylesheet" type="text/css" href="./css/style.css"/>
+        <link rel="stylesheet" type="text/css" href="./css/detail.css"/>
+        <link rel="stylesheet" type="text/css" href="./plugins/dropload.css">
+	</head>
+	<body>
+        <div id="root">
+            <div class="card">
+                <div id="deviceDetail" class="content">
+                    <div class="empty">暂无相关数据</div>
+                    <!-- <div>设备编号：<span>357213276545</span></div>
+                    <div>接入状态：<span><i class="icon icon-dot" status='success'></i>设备正常</span></div>
+                    <div>在线状态：<span><i class="icon icon-outline"></i>离线</span></div>
+                    <div>浓度：<span>0.0</span></div>
+                    <div>更新时间：<span>2019-4-1</span></div> -->
+                </div>
+            </div>
+            <div class="card">
+                <div class="title transparent">
+                    <div>燃气浓度列表</div>
+                    <div>近3天</div>
+                </div>
+                <div id="chart" style="height:140px;">
+                    <div class="empty">暂无相关数据</div>
+                </div>
+            </div>
+            <!-- <div class="card">
+                <div class="title">设备维护记录</div>
+                <div class="content">
+                    <div>序号：<span>1</span></div>
+                    <div>维护详情：<span>报警模块更换</span></div>
+                    <div>维护人员：<span>王五</span></div>
+                    <div>维护时间：<span>2019-4-1</span></div>
+                    <i class="divider"></i>
+                    <div>序号：<span>2</span></div>
+                    <div>维护详情：<span>报警模块更换</span></div>
+                    <div>维护人员：<span>王五</span></div>
+                    <div>维护时间：<span>2019-4-1</span></div>
+                </div>
+            </div> -->
+            <div class="card">
+                <div class="title">设备预警记录</div>
+                <div id="warning" class="content">
+                    <div class="empty">暂无相关数据</div>
+                    <!-- <div>序号：<span>1</span></div>
+                    <div>预警详情：<span><i class="icon icon-dot" status='success'></i>一级预警</span></div>
+                    <div>维护时间：<span>2019-4-1</span></div>
+                    <i class="divider"></i>
+                    <div>序号：<span>2</span></div>
+                    <div>预警详情：<span><i class="icon icon-dot" status='error'></i>三级预警</span></div>
+                    <div>维护时间：<span>2019-4-1</span></div> -->
+                </div>
+                <div class="footer">
+                    <span id="more" data-status='open'>
+                        <i class="icon icon-down-arrow"></i><span>更多</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </body>
+    <script src="./plugins/echarts.min.js"></script>
+    <script src="./plugins/jquery.min.js"></script>
+    <script src="./plugins/dropload.js"></script>
+    <script src="./js/ajax.js"></script>
+    <script src="./js/util.js"></script>
+    <script>
+
+        var _chart = document.getElementById('chart');
+        var _detail = $('#deviceDetail');
+        var _warning = $('#warning');
+        var _more = $('#more');
+
+        var dropload;
+
+        // 获取页面url参数
+        var deviceid = getQueryString('id');
+        var dtype = getQueryString('dtype');
+
+        $(function(){
+
+            // 点击更多，查询更多设备发送记录
+            _more.on('click', warningList);
+
+            dropload = $('#root').dropload({
+                scrollArea : window,
+                autoLoad: false,
+                domDown: {
+                    domClass   : 'dropload-down',
+                    domRefresh : '',
+                    domLoad    : '<div class="dropload-load"><span class="loading"></span>加载中</div>',
+                    domNoData  : ''
+                },
+                loadUpFn: function(me){
+                    window.location.reload();
+                },
+                loadDownFn: ''
+            });
+
+            if(deviceid && dtype){
+                // 设备详情 
+                detail();
+                // 浓度曲线
+                chartLine();
+                // 预警记录
+                warningList();
+            } else {
+                ajax.loadOver = true;
+                alert('缺少设备参数，不能获取设备信息！');
+            }
+
+        })
+
+        function detail(){
+            ajax.request('/machine/machineBaseInfo/selectInfoListByDeviced',{
+                title: '设备信息',
+                data: {
+                    deviceid: deviceid,
+                    dtype: dtype
+                },
+                success: function(res){
+                    if(res.code === '0'){
+                        var item = res.data.list[0];
+                        if(item){
+                            var isused = {
+                                '1': '使用中',
+                                '0': '未使用'
+                            };
+                            _detail.html(`
+                                <div>设备编号：${item.deviceid}</div>
+                                <div>接入状态：<i class="icon icon-dot" status="${item.isused === '1' ? 'success' : '' }"></i>${isused[item.isused]}</div>
+                                <div>在线状态：<i class="icon ${item.onlinestatus === '在线' ? 'icon-online' : 'icon-outline'}"></i>${item.onlinestatus}</div>
+                                <div>浓度：${item.density||"-"}%LEL</div>
+                                <div>设备类别：${item.dtype||"-"}</div>
+                                <div>归属单位：${item.uname||"-"}</div>
+                                <div>更新时间：${item.modifydate||"-"}</div>
+                            `)
+                        }
+                    }
+                }
+            })
+        }
+
+        function chartLine (){
+
+            var times = getTime(-3);
+
+            ajax.request('/machine/machineBaseInfo/selectMachineHis', {
+                title: '浓度曲线图',
+                data: {
+                    deviceid: deviceid,
+                    dtype: dtype,
+                    sttm: times.start,
+                    endtm: times.end
+                },
+                type: 'post',
+                success: function(res){
+                    if(res.code === '0') {
+                        var x = [];
+                        var y = [];
+
+                        res.data.forEach(function (item) {
+                            x.push(item.activedate.replace(/.{5}/, ''));
+                            y.push(item.dttdensity1);
+                        })
+
+                        chart(_chart, { x: x, y: y });
+
+                    } else {
+                        _chart.innerHTML = '<div class="empty">请求失败，请重试</div>';
+                    }
+                }
+            })
+        }
+
+        function warningList(){
+            ajax.next('/alarm/warningRecordController/infoList', {
+                title: '预警记录',
+                data: {
+                    mn: deviceid,
+                },
+                type: 'post',
+                success: function(res){
+                    if (res.code === '0') {
+                        var list = res.data.list;
+                        var dataDom = [];
+
+                        var status = {
+                            '一级预警': 'warn',
+                            '二级预警': 'error',
+                            '三级预警': 'danger'
+                        }
+
+                        list.forEach(function (item, index) {
+                            dataDom.push(`
+                                <div>预警详情：<span><i class="icon icon-dot" status="${status[item.jibie]}"></i>${item.jibie}</span></div>
+                                <div>预警时间：${item.datetime==='' ? '-' : item.datetime}</div>
+                                <i class="divider"></i>
+                            `)
+                        })
+
+                        _warning.append(dataDom.join(''));
+                        if(list.length){
+                            _warning.children('.empty').attr('hidden', 'hidden');
+                        }
+
+                        // 所有的数据加载完毕，不再进行下一次列表请求，除非刷新
+                        if(_warning.children('.divider').length === Number(res.data.total)) {
+                            ajax.loadOver = true;
+                            _more.children('span').html('已加载完毕');
+                        }
+
+                    } else {
+                        alert('预警请求失败，请重试');
+                    }
+                }
+            })
+        }
+
+    </script>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>设备绑定</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black">
+		<!--App自定义的css-->
+		<link rel="stylesheet" type="text/css" href="./css/style.css"/>
+		<link rel="stylesheet" type="text/css" href="./css/bind.css"/>
+		<link rel="stylesheet" type="text/css" href="./plugins/dropload.css"/>
+	</head>
+	<body>
+        <div id="root">
+            <div id="empty">
+                <div class="content">
+                    <img src="./img/1.png" alt="设备">
+                    <div id="message" class="info" data-status="default">
+                        <span>
+                            暂未绑定
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <ul id="emList" class="emList" hidden>
+                <!-- <li>
+                    <div class="card">
+                        <div class="content">
+                            <div class="unbind" data-unid="">解绑</div>
+                            <a href="./equipment-detail.html">
+                                <div>设备编号：<span>357213276545</span></div>
+                                <div>接入状态：<span><i class="icon icon-dot" status='success'></i>设备正常</span></div>
+                                <div>在线状态：<span><i class="icon icon-outline"></i>离线</span></div>
+                                <div>浓度：<span>0.0</span></div>
+                                <div>更新时间：<span>2019-4-1</span></div>
+                            </a>
+                        </div>
+                    </div>
+                </li> -->
+            </ul>
+            <div class="btnGroup">
+                <button id="goBind">去绑定</button>
+            </div>
+        </div>
+	</body>
+    <script src="./plugins/jquery.min.js"></script>
+    <script src="./plugins/dropload.js"></script>
+    <script src="./js/ajax.js"></script>
+    <script src="./js/util.js"></script>
+    <script>
+
+        var _empty = $('#empty');
+        var _list = $('#emList');
+        var _goBind = $('#goBind');
+        var dropload;
+
+        $(function(){
+
+            // 如果不是老用户，就跳到引导页
+			if(!getIsOldUser()) {
+                window.location.href = './equipment-guide.html';
+                return;
+            }
+
+            // 点击解绑，解绑设备
+            _list.on('click', '.unbind', function(){
+                var openid = localStorage.getItem('openid');
+                var unid = $(this).attr('data-unid');
+                
+                if(confirm('确认解绑此设备吗？')){
+                    unbind(openid, unid);
+                }
+            });
+
+            _goBind.on('click', function(){
+                var openid = localStorage.getItem('openid');
+                if(openid){
+                    window.location.href = './equipment-list.html';
+                } else {
+                    getOpenID();
+                }
+            });
+
+            dropload = $('#root').dropload({
+                scrollArea : window,
+                autoLoad: false,
+                domDown: {
+                    domClass   : 'dropload-down',
+                    domRefresh : '',
+                    domLoad    : '<div class="dropload-load"><span class="loading"></span>加载中</div>',
+                    domNoData  : ''
+                },
+                loadUpFn: function(me){
+                    _empty.removeAttr('hidden');
+                    _list.html('').attr('hidden', 'hidden');
+
+                    dropload.isLockDown = false;
+
+                    ajax.reset();
+                    getOpenID(selectInfoListByOpenId);
+                },
+                loadDownFn: function(me){
+                    getOpenID(selectInfoListByOpenId);
+                }
+            });
+
+            getOpenID(selectInfoListByOpenId);
+        })
+
+        function unbind(openid, unid){
+            ajax.request('/alarmWechatBind/alarmWechatBindInfo/untyingCompanyByOpenid', {
+                data: {
+                    openid: openid,
+                    bindid: unid
+                },
+                type: 'post',
+                success: function(res){
+                    var errMessage = {
+                        "66014": "单位解绑失败",
+                        "66015": "解绑异常",
+                        "66016": "用户没有绑定此单位",
+                        "66017": "用户解绑成功",
+                        "66018": "用户解绑失败"
+                    }
+                    alert(errMessage[res.code] || '解绑失败');
+                    if(res.code === '66017'){
+                        window.location.reload();
+                    }
+                }
+            })
+        }
+        
+        function selectInfoListByOpenId(openid){
+            ajax.next('/machine/machineBaseInfo/selectInfoListByOpenId',{
+                data: {
+                    openId: openid
+                },
+                complete: function(){
+                    dropload.resetload();
+                },
+                success: function(res){
+                    if(res.code === '0'){
+                        var list = res.data.list;
+                        // 查询设备，如果为空，提示跳到绑定页
+                        if(!list.length) {
+                            if(!_list.children('li').length && confirm('暂无绑定设备，立即前往绑定')){
+                                window.location.href = './equipment-list.html';
+                            }
+                        } else {
+                            $('body').css('background', '#f1f1f1')
+                            _empty.attr('hidden', 'hidden');
+                            _list.removeAttr('hidden');
+
+                            var isused = {
+                                '1': {
+                                    title: '使用中',
+                                    status: 'success'
+                                },
+                                '0': {
+                                    title: '未使用',
+                                    status: ''
+                                }
+                            };
+                            var dataDom = [];
+
+                            list.forEach(function (item) {
+                                dataDom.push(`
+                                    <li>
+                                        <div class="card">
+                                            <div class="content">
+                                                <div class="unbind" data-unid="${item.unid}">解绑</div>
+                                                <a href="./equipment-detail.html?id=${item.deviceid}&dtype=${item.dtype}">
+                                                    <div>设备编号：${item.deviceid}</div>
+                                                    <div>接入状态：<i class="icon icon-dot" status="${isused[item.isused].status}"></i>${isused[item.isused].title}</div>
+                                                    <div>在线状态：<i class="icon ${item.onlinestatus === '在线' ? 'icon-online' : 'icon-outline'}"></i>${item.onlinestatus}</div>
+                                                    <div>浓度：${item.density}%LEL</div>
+                                                    <div>设备类别：${item.dtype||"-"}</div>
+                                                    <div>归属单位：${item.uname||"-"}</div>
+                                                    <div>更新时间：${item.modifydate||"-"}</div>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </li>
+                                `)
+                            })
+                            _list.append(dataDom.join(''));
+
+                            // 所有的数据加载完毕，不再进行下一次列表请求，除非刷新
+                            dropload.isLockDown = _list.children('li').length >= Number(res.data.total) || list.length < 10;
+                        }
+
+                    } else {
+                        // 失败刷新页面
+                        if (confirm(requestBody.title + '请求失败，点击确认刷新重试~')) {
+                            window.location.reload();
+                        }
+                    }
+                }
+            })
+        }
+    </script>
+</html>

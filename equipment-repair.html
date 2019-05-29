@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>设备报修</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black">
+		<!--App自定义的css-->
+		<link rel="stylesheet" type="text/css" href="./css/style.css"/>
+        <link rel="stylesheet" type="text/css" href="./css/repair.css"/>
+        <link rel="stylesheet" type="text/css" href="./plugins/ImagePicker.css"/>
+        
+	</head>
+	<body>
+        <div id="root">
+            <form>
+                <div class="card">
+                    <div class="content">
+                        <div>设备编号：<span>357213276545</span></div>
+                        <div>归属单位：锡山区燃气办</div>
+                        <div>上报人：<input name="name" placeholder="请输入姓名" /></div>
+                        <div>报修内容：<input name="bxnr" placeholder="请输入报修内容" /></div>
+                        <div>上报时间：<span>2019-4-1</span></div>
+                        <div>报修地点：<input name="address" placeholder="请输入具体地点" /></div>
+                        <div class="align-start">照片：
+                            <div id="image-picker"></div>
+                        </div>
+                        <div class="align-start">备注：<textarea name="remark" placeholder="备注信息" rows="6"></textarea></div>
+                    </div>
+                </div>
+                <div class="btnGroup">
+                    <button type="submit" id="repair">确认报修</button>
+                </div>
+            </form>
+        </div>
+	</body>
+    <script src="./plugins/jquery.min.js"></script>
+    <script src="./plugins/ImagePicker.js"></script>
+    <script src="./js/ajax.js"></script>
+    <script src="./js/util.js"></script>
+    <script>
+
+        var _repair = $('#repair');
+
+        var imagePicker = new ImagePicker({
+            target: $('#image-picker'),
+            url: '', // 要上传的地址
+            maxLength: 9, // 最大选择图片数量
+        });
+
+        imagePicker.onChange = function (images) {
+            console.log(images);
+        }
+
+        _repair.on('click', function () {
+            // imagePicker.upload(function (result) {
+            //     console.log(result);
+            // });
+        })
+
+        function onsubmit(e){
+            console.log(e)
+        }
+
+    </script>
+</html>

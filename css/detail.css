@@ -1,0 +1,19 @@
+body {
+    background: #f1f1f1;
+}
+
+.card > div.title.transparent{
+    background: transparent;
+}
+
+#more{
+    color:#4c90e5;
+}
+
+#more i.icon{
+    transition: all 0.2s;
+}
+
+#more[data-status='close'] i.icon{
+    transform: rotateX(180deg);
+}
